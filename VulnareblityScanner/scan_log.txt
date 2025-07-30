@@ -1,0 +1,5 @@
+2024-12-26 20:48:34 - Scan completed for https://www.google.com. Vulnerabilities found: ["Missing 'X-Content-Type-Options' header.", "Missing 'Strict-Transport-Security' header."]
+2024-12-26 20:50:13 - Scan completed for http://www.chatgpt.com. Vulnerabilities found: ['Possible XSS vulnerability detected.', 'Insecure protocol detected. Use HTTPS with HSTS headers.']
+2024-12-26 20:50:53 - Scan completed for https://www.google.com. Vulnerabilities found: ["Missing 'X-Content-Type-Options' header.", "Missing 'Strict-Transport-Security' header."]
+2024-12-26 20:54:14 - Error scanning https://www.chatgpt.com: HTTPSConnectionPool(host='www.chatgpt.com', port=443): Max retries exceeded with url: / (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x00000125C0B7BA10>: Failed to resolve 'www.chatgpt.com' ([Errno 11001] getaddrinfo failed)"))
+2024-12-26 20:55:17 - Scan completed for https://www.chatgpt.com. Vulnerabilities found: ['Possible XSS vulnerability detected.']
