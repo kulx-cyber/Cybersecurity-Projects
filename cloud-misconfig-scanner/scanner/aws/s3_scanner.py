@@ -47,5 +47,101 @@ def check(session, logger, dry_run, policy):
                 else:
                     logger.error(f"Error getting policy for bucket {bucket_name}: {e}")
 
-        # Check for encryption
-        #if policy.get("enforce_encryption", True):
+        # 2. Check for encryption
+        if policy.get("encryption_enabled", True):
+            try:
+                encryption = s3_client.get_bucket_encryption(Bucket=bucket_name)
+                logger.info(f"Bucket {bucket_name} has encryption enabled: {encryption['ServerSideEncryptionConfiguration']}")
+            except ClientError as e:
+                if e.response['Error']['Code'] == 'ServerSideEncryptionConfigurationNotFoundError':
+                    logger.warning(f"Bucket {bucket_name} does not have encryption enabled.")
+                    if dry_run:
+                        logger.info(f"Dry run: Would enable encryption for bucket {bucket_name}.")
+                    else:
+                        s3_client.put_bucket_encryption(
+                            Bucket=bucket_name,
+                            ServerSideEncryptionConfiguration={
+                                'Rules': [
+                                    {
+                                        'ApplyServerSideEncryptionByDefault': {
+                                            'SSEAlgorithm': 'AES256'
+                                        }
+                                    }
+                                ]
+                            }
+                        )
+                        logger.info(f"Enabled encryption for bucket {bucket_name}.")
+                else:
+                    logger.error(f"Error getting encryption for bucket {bucket_name}: {e}")
+
+        # 3. Check for versioning
+        if policy.get("versioning_enabled", True):
+            try:
+                versioning = s3_client.get_bucket_versioning(Bucket=bucket_name)
+                if versioning.get('Status') == 'Enabled':
+                    logger.info(f"Bucket {bucket_name} has versioning enabled: {versioning}")
+                else:
+                    logger.warning(f"Bucket {bucket_name} does not have versioning enabled.")
+                    if dry_run:
+                        logger.info(f"Dry run: Would enable versioning for bucket {bucket_name}.")
+                    else:
+                        s3_client.put_bucket_versioning(
+                            Bucket=bucket_name,
+                            VersioningConfiguration={
+                                'Status': 'Enabled'
+                            }
+                        )
+                        logger.info(f"Enabled versioning for bucket {bucket_name}.")
+            except ClientError as e:
+                if e.response['Error']['Code'] == 'NoSuchBucket':
+                    logger.warning(f"Bucket {bucket_name} does not exist.")
+                else:
+                    logger.error(f"Error getting versioning for bucket {bucket_name}: {e}")
+
+        # 4. Check for logging_enabled
+        if policy.get("logging_enabled", True):
+            try:
+                logging = s3_client.get_bucket_logging(Bucket=bucket_name)
+                if 'LoggingEnabled' in logging:
+                    logger.info(f"Bucket {bucket_name} has logging enabled: {logging['LoggingEnabled']}")
+                else:
+                    logger.warning(f"Bucket {bucket_name} does not have logging enabled.")
+                    if dry_run:
+                        logger.info(f"Dry run: Would enable logging for bucket {bucket_name}.")
+                    else:
+                        s3_client.put_bucket_logging(
+                            Bucket=bucket_name,
+                            BucketLoggingStatus={
+                                'LoggingEnabled': {
+                                    'TargetBucket': 'your-log-bucket',
+                                    'TargetPrefix': f"{bucket_name}/"
+                                }
+                            }
+                        )
+                        logger.info(f"Enabled logging for bucket {bucket_name}.")
+            except ClientError as e:
+                if e.response['Error']['Code'] == 'NoSuchBucket':
+                    logger.warning(f"Bucket {bucket_name} does not exist.")
+                else:
+                    logger.error(f"Error getting logging for bucket {bucket_name}: {e}")
+
+        # 5. Check for block_public_policy policies
+        if policy.get("block_public_policy", True):
+            try:
+                block_public = s3_client.get_public_access_block(Bucket=bucket_name)
+                config = block_public.get('PublicAccessBlockConfiguration', {})
+                if config.get('BlockPublicPolicy', False):
+                    logger.info(f"Bucket {bucket_name} blocks public policies.")
+                else:
+                    logger.warning(f"Bucket {bucket_name} does not block public policies.")
+                    if dry_run:
+                        logger.info(f"Dry run: Would enable block public policy for bucket {bucket_name}.")
+                    else:
+                        config['BlockPublicPolicy'] = True
+                        s3_client.put_public_access_block(
+                            Bucket=bucket_name,
+                            PublicAccessBlockConfiguration=config
+                        )
+                        logger.info(f"Enabled block public policy for bucket {bucket_name}.")
+            except ClientError as e:
+                logger.error(f"Error getting block public policy for bucket {bucket_name}: {e}")
