@@ -69,9 +69,6 @@ def main():
     #User input for services
     services_to_run = get_user_services(available_services)
 
-    logger.info(f"Selected services to run: {', '.join(services_to_run)}")
-    logger.info(f"Dry run mode: {'Enabled' if args.dry_run else 'Disabled'}")
-
     # Run checks
     try:
         run_checks(
