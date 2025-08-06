@@ -1,5 +1,10 @@
 import importlib
-from scanner.aws import s3_scanner
+from scanner.aws import s3_scanner 
+from scanner.aws import iam_scanner
+from scanner.aws import ec2_scanner
+from scanner.aws import rds_scanner
+from scanner.aws import cloudtrail_scanner
+from scanner.aws import cloudwatch_scanner
 from utils.aws_session import get_aws_session
 
 def run_checks(interactive, cloud, services, dry_run, logger, policy):
