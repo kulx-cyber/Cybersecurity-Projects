@@ -1,9 +1,14 @@
 import argparse
 import sys
+import enum
 
 from utils.config_loader import load_policy
 from utils.logger import setup_logger
-from core.runner import run_checks
+from core.runner import run_process
+
+class ProcessType(enum.Enum):
+    SCAN = 1
+    REMEDIATE = 2   
 
 def get_user_services(available_services):
     print("Available Services to Run:")
@@ -39,6 +44,7 @@ def parse_args():
     parser.add_argument('--policy', type=str, default='./config/policy.yaml', help='Path to Policy YAML file')
     parser.add_argument('--log', type=str, default='./logs/cloud_scanner.log', help='Path to log file')
     parser.add_argument('--log-level', type=str, default='INFO', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], help='Set the logging level')
+
     args = parser.parse_args()
     return args
 
@@ -69,20 +75,48 @@ def main():
     #User input for services
     services_to_run = get_user_services(available_services)
 
-    # Run checks
+    # Run scan
     try:
-        run_checks(
+        run_process(
             interactive=args.interactive,
             cloud=args.cloud,
             services=services_to_run,
             dry_run=args.dry_run,
             logger=logger,
-            policy=config
+            policy=config,
+            scan=True
         )
         logger.info("Cloud misconfiguration scan completed successfully.")
     except Exception as e:
-        logger.error(f"An error occurred during the scan: {e}")
+        logger.error(f"An error occurred during the run: {e}")
         sys.exit(1)
+
+    # Run remediation
+    if not args.dry_run:
+        try:
+            logger.info("Starting remediation process...")
+            logger.info("WARNING: Remediation will make changes to your cloud resources.")
+            logger.info("Ensure you have reviewed the scan results and have backups if necessary.")
+            logger.info("Press Enter to continue or Ctrl+C to abort...")
+            input()  # Wait for user input
+            
+            # Placeholder for remediation logic
+            run_process(
+                interactive=args.interactive,
+                cloud=args.cloud,
+                services=services_to_run,
+                dry_run=args.dry_run,
+                logger=logger,
+                policy=config,
+                scan=False
+            )
+            logger.info("Remediation process completed.")
+        except Exception as e:
+            logger.error(f"An error occurred during remediation: {e}")
+            sys.exit(1)
+        except KeyboardInterrupt:
+            logger.info("Remediation process aborted.")
+            sys.exit(0)
 
 if __name__ == "__main__":
     main()
