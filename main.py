@@ -1,14 +1,9 @@
 import argparse
 import sys
-import enum
 
 from utils.config_loader import load_policy
 from utils.logger import setup_logger
-from core.runner import run_process
-
-class ProcessType(enum.Enum):
-    SCAN = 1
-    REMEDIATE = 2   
+from core.runner import run_process, ProcessType   
 
 def get_user_services(available_services):
     print("Available Services to Run:")
@@ -84,7 +79,7 @@ def main():
             dry_run=args.dry_run,
             logger=logger,
             policy=config,
-            scan=True
+            process=ProcessType.SCAN
         )
         logger.info("Cloud misconfiguration scan completed successfully.")
     except Exception as e:
@@ -108,7 +103,7 @@ def main():
                 dry_run=args.dry_run,
                 logger=logger,
                 policy=config,
-                scan=False
+                process=ProcessType.REMEDIATE
             )
             logger.info("Remediation process completed.")
         except Exception as e:
