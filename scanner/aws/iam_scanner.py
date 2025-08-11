@@ -1,6 +1,7 @@
 import boto3
 from botocore.exceptions import ClientError
 import datetime
+import pyotp
 
 def check(session, logger, dry_run, policy):
     iam_client = session.client("iam")
@@ -75,12 +76,39 @@ def check(session, logger, dry_run, policy):
                 if not mfa: 
                     logger.warning(f"User {user_name} does not have MFA enabled.")
                 if not dry_run:
-                    iam_client.enable_mfa_device(
-                        UserName=user_name,
-                        SerialNumber='arn:aws:iam::123456789012:mfa/user_name',
-                        AuthenticationCode1='123456',
-                        AuthenticationCode2='789012'
+                    #Step 1: Create a new virutal MFA device
+                    logger.info(f"Creating virtual MFA device for user {user_name}")
+
+                    #Step 2: Create the virtual MFA device
+                    create_mfa_response = iam_client.create_virtual_mfa_device(
+                        VirtualMFADeviceName=f"{user_name}_mfa",
+                        Path=f"/users/{user_name}/"
                     )
+
+                    #Step 3: REtrive the secret code and QR code information
+                    secret_code = create_mfa_response['VirtualMFADevice']['Base32Secret']
+                    serial_number = create_mfa_response['VirtualMFADevice']['SerialNumber']
+                    logger.info(f"Created virtual MFA device for {user_name}. Serial Number: {serial_number}")
+                    logger.info(f"Secret Code for MFA device: {secret_code}")
+
+                    # Step 4: Generate a QR Code (optional)
+                    # You can use this secret code to generate a QR code using a library like `pyotp`
+                    otp = pyotp.TOTP(secret_code)
+                    logger.info(f"To link MFA device, scan this QR code with your MFA app: {otp.provisioning_uri(user_name, issuer_name='MyCompany')}")
+                    logger.info("The user should scan the QR code with their MFA app (Google Authenticator, etc.).")
+
+                    # Step 5: Prompt user for the two consecutive MFA codes
+                    authentication_code_1 = input("Enter MFA Code 1 (from MFA app): ")
+                    authentication_code_2 = input("Enter MFA Code 2 (from MFA app): ")
+
+                    # Step 6: Enable the MFA device using the generated codes
+                    enable_mfa_response = iam_client.enable_mfa_device(
+                        UserName=user_name,
+                        SerialNumber=serial_number,
+                        AuthenticationCode1=authentication_code_1,
+                        AuthenticationCode2=authentication_code_2
+                    )
+
                     logger.info(f"Enabled MFA for user {user_name}.")
             except ClientError as e:
                 logger.error(f"Error enabling MFA for user {user_name}: {e}")

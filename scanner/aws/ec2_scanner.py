@@ -25,6 +25,7 @@ def check(session, logger, dry_run, policy):
                                             GroupId=sg['GroupId'],
                                             IpPermissions=[permission]
                                         )
+                                        logger.info(f"Revoked unrestricted SSH access for Security group {sg['GroupId']}.")
                                 elif policy.get('insecure_security_groups', True):
                                     logger.warning(f"Security group {sg['GroupId']} allows insecure access.")
                                     if not dry_run:
@@ -32,6 +33,7 @@ def check(session, logger, dry_run, policy):
                                             GroupId=sg['GroupId'],
                                             IpPermissions=[permission]
                                         )
+                                        logger.info(f"Revoked insecure access for Security group {sg['GroupId']}.")
         #2. metadata http tokens
         if policy.get('metadata_http_tokens', True):
             instances = ec2_client.describe_instances().get('Reservations', [])
@@ -47,7 +49,8 @@ def check(session, logger, dry_run, policy):
                                 InstanceId=instance['InstanceId'],
                                 HttpTokens='required'
                             )
-        
+                            logger.info(f"Updated metadata HTTP tokens for Instance {instance['InstanceId']}.")
+
         #3. Public IPs assignment
         if policy.get('public_ip_assignment', True):
             instances = ec2_client.describe_instances().get('Reservations', [])
@@ -60,6 +63,7 @@ def check(session, logger, dry_run, policy):
                                 InstanceId=instance['InstanceId'],
                                 NoPublicIp=True
                             )
+                            logger.info(f"Removed public IP from Instance {instance['InstanceId']}.")
 
         #4. EBS volume encryption
         if policy.get('volume_encryption', True):
@@ -72,5 +76,6 @@ def check(session, logger, dry_run, policy):
                             VolumeId=volume['VolumeId'],
                             KmsKeyId=policy.get('kms_key_id')
                         )
+                        logger.info(f"Encrypted EBS Volume {volume['VolumeId']} with KMS key {policy.get('kms_key_id')}.")
     except ClientError as e:
         logger.error(f"Error during EC2 checks: {e}")

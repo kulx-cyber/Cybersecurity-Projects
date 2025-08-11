@@ -20,9 +20,17 @@ def check(session, logger, dry_run, policy):
 
             if not vol.get('Encrypted', False):
                 logger.warning(f"EBS Volume {volumeId} is not encrypted.")
+                if not dry_run:
+                    logger.info(f"Remediation: Consider replacing or encrypting volume {volumeId} manually.")
 
             if vol.get('State') == 'available':
                 logger.warning(f"EBS Volume {volumeId} is not attached to any instance.")
+                if not dry_run:
+                    try:
+                        ebs_client.delete_volume(VolumeId=volumeId)
+                        logger.info(f"Deleted unused EBS Volume {volumeId}.")   
+                    except ClientError as e:
+                        logger.error(f"Error deleting EBS Volume {volumeId}: {e}")
 
     #2. Check for snapshots public access
     if policy.get("snapshot_public_access", True):
@@ -44,3 +52,14 @@ def check(session, logger, dry_run, policy):
             for perm in permissions:
                 if 'Group' in perm and perm.get('Group') == 'all':
                     logger.warning(f"EBS Snapshot {snapshotId} is publicly accessible.")
+                    if not dry_run:
+                        try:
+                            ebs_client.modify_snapshot_attribute(
+                                SnapshotId=snapshotId,
+                                Attribute='createVolumePermission',
+                                OperationType='remove',
+                                GroupNames=['all']
+                            )
+                            logger.info(f"Removed public access from EBS Snapshot {snapshotId}.")
+                        except ClientError as e:
+                            logger.error(f"Error modifying EBS Snapshot {snapshotId}: {e}")

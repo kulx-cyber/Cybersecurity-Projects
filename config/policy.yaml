@@ -7,6 +7,9 @@ global:
 services:
   s3:
     enabled: true
+    # Optional: Target bucket for S3 server access logs when enabling logging
+    # Leave empty to skip auto-enabling logging
+    s3_log_bucket: ""
     checks:
       - public_access
       - encryption_enabled
@@ -27,6 +30,8 @@ services:
 
   ec2:
     enabled: true
+    # Optional: KMS Key ID or ARN to use when encrypting unencrypted EBS volumes via modify_volume
+    kms_key_id: ""
     checks:
       - unrestricted_ssh
       - insecure_security_groups
@@ -36,6 +41,8 @@ services:
 
   rds:
     enabled: true
+  # Backup retention days to enforce when below this threshold
+  backup_retention_days: 7
     checks:
       - public_access
       - storage_encryption
@@ -58,6 +65,10 @@ services:
 
   lambda:
     enabled: true
+    # Optional: KMS Key ARN to encrypt environment variables; when empty, remediation is skipped
+    kms_key_arn: ""
+    # Control X-Ray tracing remediation
+    tracing_enabled: true
     checks:
       - function_timeout
       - logging_enabled
@@ -88,6 +99,8 @@ services:
 
   sns:
     enabled: true
+  # Optional: KMS Key ARN to enable at-rest encryption; when empty, uses alias/aws/sns by default
+  kms_key_arn: ""
     checks:
       - public_access
       - encryption

@@ -41,7 +41,7 @@ def check(session, logger, dry_run, policy):
 
             if not found:
                 logger.warning(f"Creating CloudWatch alarm for {check_name}.")
-                '''
+                
                 if not dry_run:
                     cloudwatch_client.put_metric_alarm(
                         AlarmName=f"{check_name}_alarm",
@@ -56,5 +56,4 @@ def check(session, logger, dry_run, policy):
                         AlarmActions=['arn:aws:sns:us-east-1:123456789012:MySNSTopic'],
                         AlarmDescription=f"Alarm for {check_name}",
                     )
-                    logger.info(f"Created CloudWatch alarm for {check_name}.")
-                '''
+                logger.info(f"Created CloudWatch alarm for {check_name}.")
