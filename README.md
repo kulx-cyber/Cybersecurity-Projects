@@ -166,4 +166,4 @@ These XML files can be uploaded to CI systems (e.g., GitHub Actions) for test re
 3. Submit a PR
 
 ### License
-MIT (add your license details if different)
+This is open source software.
